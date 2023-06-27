@@ -60,8 +60,7 @@ def generate_captions(name, retries=3):
 
 def build_dataset():
     i = 0
-    with open(f"dataset/train/textures/metadata.csv", "w") as metacsv:
-        metacsv.write("file_name,text\n")
+    with open(f"dataset/train/textures/metadata.jsonl", "w") as metacsv:
         for fn in glob.glob("textures/*.txt"):
             print(fn)
             id_ = os.path.splitext(os.path.basename(fn))[0]
@@ -76,8 +75,9 @@ def build_dataset():
                 print(fn, title, e)
                 continue
             caption += " " + data_source
-            img.save(f"dataset/train/textures/{i}.png")
-            metacsv.write(f"{i}.png,{caption}\n")
+            img.convert("RGB").save(f"dataset/train/textures/{i}.png")
+            meta = dict(file_name=f"{i}.png", text=caption)
+            metacsv.write(f"{json.dumps(meta)}\n")
             i += 1
 
 
