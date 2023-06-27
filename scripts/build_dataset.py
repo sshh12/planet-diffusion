@@ -12,8 +12,8 @@ Describe the celestial object as if it was a prompt for an image generation mode
 * Do not include the name of the celestial object itself. 
 * Caption only, it should not be a command. At most 2 sentences. 
 * Be scientific, clear/exact, and not artistic. Note colors and high level features.
-* The descriptions should be specific, visual, and geological.
-* Include the phrase "a planet/moon/etc texture map of" in each caption
+* The descriptions should be specific, visual, and mostly geological. Use plain concise language.
+* Include the phrase "A planet/moon/etc cylindrical projection texture map of" in each caption
 
 Generate 10 captions.
 """

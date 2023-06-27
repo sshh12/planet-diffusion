@@ -82,20 +82,17 @@ data:
           - target: torchvision.transforms.Resize
             params:
               size: [512, 1024]
-          - target: torchvision.transforms.RandomCrop
-            params:
-              size: 512
           - target: torchvision.transforms.RandomHorizontalFlip
           - target: torchvision.transforms.RandomVerticalFlip
     validation:
       target: ldm.data.simple.TextOnly
       params:
         captions:
-          - "A planet texture map of a celestial landscape punctuated by numerous craters and strewn with icy boulders, reflecting minimal sunlight due to its location in the outer solar system. fiction"
-          - "A planet texture map of a rugged, reddish landscape strewn with iron-rich rocks under a dusty, thin atmosphere, with towering volcanoes and deep, ancient riverbeds hinting at a geologically active past. NASA"
-          - "A planet texture map of a rugged, greenish landscape strewn with copper-rich rocks under a dusty, thin atmosphere, with towering volcanoes and deep, ancient riverbeds hinting at a geologically active past. NASA"
-          - "A planet texture map a dense, swirling atmosphere filled with brightly colored bands of clouds, composed mainly of hydrogen and helium, with intermittent, turbulent storm systems such as the Great Purple Spot. NASA"
-        output_size: 512
+          - "A planet cylindrical projection texture map of a celestial landscape punctuated by numerous craters and strewn with icy boulders, reflecting minimal sunlight due to its location in the outer solar system. fiction"
+          - "A planet cylindrical projection texture map of a rugged, reddish landscape strewn with iron-rich rocks under a dusty, thin atmosphere, with towering volcanoes and deep, ancient riverbeds hinting at a geologically active past. NASA"
+          - "A planet cylindrical projection texture map of a rugged, greenish landscape strewn with copper-rich rocks under a dusty, thin atmosphere, with towering volcanoes and deep, ancient riverbeds hinting at a geologically active past. NASA"
+          - "A planet cylindrical projection texture map a dense, swirling atmosphere filled with brightly colored bands of clouds, composed mainly of hydrogen and helium, with intermittent, turbulent storm systems such as the Great Purple Spot. NASA"
+        output_size: [512, 1024]
         n_gpus: 2
 
 lightning:
