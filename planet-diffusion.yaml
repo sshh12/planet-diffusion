@@ -20,7 +20,7 @@ model:
       params:
         warm_up_steps: [1] # NOTE for resuming. use 10000 if starting from scratch
         cycle_lengths: [10000000000000] # incredibly large number to prevent corner cases
-        f_start: [1.e-6]
+        f_start: [1.e-7]
         f_max: [1.]
         f_min: [1.]
 
@@ -88,10 +88,10 @@ data:
       target: ldm.data.simple.TextOnly
       params:
         captions:
-          - "A planet cylindrical projection texture map of a celestial landscape punctuated by numerous craters and strewn with icy boulders, reflecting minimal sunlight due to its location in the outer solar system. fiction"
-          - "A planet cylindrical projection texture map of a rugged, reddish landscape strewn with iron-rich rocks under a dusty, thin atmosphere, with towering volcanoes and deep, ancient riverbeds hinting at a geologically active past. NASA"
-          - "A planet cylindrical projection texture map of a rugged, greenish landscape strewn with copper-rich rocks under a dusty, thin atmosphere, with towering volcanoes and deep, ancient riverbeds hinting at a geologically active past. NASA"
-          - "A planet cylindrical projection texture map a dense, swirling atmosphere filled with brightly colored bands of clouds, composed mainly of hydrogen and helium, with intermittent, turbulent storm systems such as the Great Purple Spot. NASA"
+          - A rocky, barren landscape with high mountain ranges, with a reddish-brown surface peppered with numerous small, dark grey impact craters
+          - A planet's surface with vast expanses of vibrant blue-green vegetation, interspersed with large, clear freshwater bodies and brown mountain ranges
+          - A frigid landscape with a thick white snowy surface, occasional rocky outcrops, and numerous icy blue glaciers
+          - A tropical landscape with wide expanses of lush green rainforests, azure blue oceans, and occasional sandy beaches
         output_size: [512, 1024]
         n_gpus: 2
 

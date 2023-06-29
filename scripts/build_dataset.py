@@ -7,13 +7,16 @@ import json
 import random
 
 CAPTION_PROMPT = """
-Describe the celestial object as if it was a prompt for an image generation model for the surface texture. 
+Describe the celestial object as if it was a prompt for an image generation model for the surface texture.
 
-* Do not include the name of the celestial object itself. 
-* Caption only, it should not be a command. At most 2 sentences. 
-* Be scientific, clear/exact, and not artistic. Note colors and high level features.
-* The descriptions should be specific, visual, and mostly geological. Use plain concise language.
-* Include the phrase "A planet/moon/etc cylindrical projection texture map of" in each caption
+- Do not include the name of the celestial object itself.
+- Caption only, it should not be a command. At most 2 sentences.
+- Be scientific, clear/exact, and not artistic. Note colors and high level features
+- The descriptions should be specific, visual, and mostly geological. Use plain concise language
+
+Examples: 
+- "a moon heavily cratered with a dark grey surface, a large ridge across the center"
+- "a planet with a large green ocean and a small brownish continent in the middle"
 
 Generate 10 captions.
 """
@@ -44,6 +47,7 @@ def _generate_captions(name):
         function_call={"name": "write_captions"},
     )
     args = json.loads(resp.choices[0]["message"]["function_call"]["arguments"])
+    print(name, "->", args["captions"])
     return args["captions"]
 
 
