@@ -4,7 +4,7 @@
 
 ## Demos
 
-Cherry-picked best-of-4. It tends to struggle with prompts involving oceans or continents as that's pretty overfitted to Earth. Generally, this model is fairly overfitted to existing objects in our solar system.
+Cherry-picked best-of-4. It tends to struggle with prompts involving oceans or continents as that's pretty overfit to Earth. Generally, this model is fairly overfit to existing objects in our solar system.
 
 |                               Prompt                               |                                                   Texture                                                   |                                                   Render                                                    |
 | :----------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------: |
