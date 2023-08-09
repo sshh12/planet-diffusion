@@ -5,6 +5,7 @@ import glob
 import openai
 import json
 import random
+import argparse
 
 CAPTION_PROMPT = """
 Describe the celestial object as if it was a prompt for an image generation model for the surface texture.
@@ -62,31 +63,35 @@ def generate_captions(name, retries=3):
             raise e
 
 
-def build_dataset():
+def build_dataset(textures_path, images_path):
     i = 0
-    with open(f"dataset/train/textures/metadata.jsonl", "w") as metacsv:
-        for fn in glob.glob("textures/*.txt"):
+    with open(os.path.join(images_path, "metadata.jsonl"), "w") as metacsv:
+        for fn in glob.glob(os.path.join(textures_path, "*.txt")):
             print(fn)
             id_ = os.path.splitext(os.path.basename(fn))[0]
             with open(fn, "r") as f:
                 lines = f.readlines()
                 title = lines[0].strip()
-                data_source = lines[2].strip()
-                img = Image.open(f"textures/{id_}.png")
+                img = Image.open(os.path.join(textures_path, f"{id_}.png"))
             try:
                 caption = random.choice(generate_captions(title))
             except Exception as e:
                 print(fn, title, e)
                 continue
-            caption += " " + data_source
-            img.convert("RGB").save(f"dataset/train/textures/{i}.png")
-            meta = dict(file_name=f"{i}.png", text=caption)
+            img_fn = f"{i:04d}.png"
+            img.convert("RGB").save(os.path.join(images_path, img_fn))
+            meta = dict(file_name=img_fn, text=caption)
             metacsv.write(f"{json.dumps(meta)}\n")
             i += 1
 
 
 if __name__ == "__main__":
-    os.makedirs("dataset", exist_ok=True)
-    os.makedirs("dataset/train", exist_ok=True)
-    os.makedirs("dataset/train/textures", exist_ok=True)
-    build_dataset()
+    # argparse dataset path
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset_path", type=str)
+    parser.add_argument("--textures_path", type=str)
+    args = parser.parse_args()
+
+    images_path = os.path.join(args.dataset_path, "train", "textures")
+    os.makedirs(images_path, exist_ok=True)
+    build_dataset(args.textures_path, images_path)
