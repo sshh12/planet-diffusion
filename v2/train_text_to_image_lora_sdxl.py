@@ -182,25 +182,16 @@ def parse_args(input_args=None):
         help="The column of the dataset containing a caption or a list of captions.",
     )
     parser.add_argument(
-        "--validation_prompt",
+        "--validation_prompt_file",
         type=str,
         default=None,
-        help="A prompt that is used during validation to verify that the model is learning.",
-    )
-    parser.add_argument(
-        "--num_validation_images",
-        type=int,
-        default=4,
-        help="Number of images that should be generated during validation with `validation_prompt`.",
+        help="A file of prompts that are used during validation to verify that the model is learning.",
     )
     parser.add_argument(
         "--validation_epochs",
         type=int,
         default=1,
-        help=(
-            "Run fine-tuning validation every X epochs. The validation process consists of running the prompt"
-            " `args.validation_prompt` multiple times: `args.num_validation_images`."
-        ),
+        help=("Run fine-tuning validation every X epochs."),
     )
     parser.add_argument(
         "--max_train_samples",
@@ -225,27 +216,32 @@ def parse_args(input_args=None):
     )
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
     parser.add_argument(
-        "--resolution",
+        "--width",
         type=int,
         default=1024,
         help=(
-            "The resolution for input images, all the images in the train/validation dataset will be resized to this"
+            "The width for input images, all the images in the train/validation dataset will be resized to this"
             " resolution"
         ),
     )
     parser.add_argument(
-        "--center_crop",
-        default=False,
-        action="store_true",
+        "--height",
+        type=int,
+        default=512,
         help=(
-            "Whether to center crop the input images to the resolution. If not set, the images will be randomly"
-            " cropped. The images will be resized to the resolution first before cropping."
+            "The height for input images, all the images in the train/validation dataset will be resized to this"
+            " resolution"
         ),
     )
     parser.add_argument(
-        "--random_flip",
+        "--random_hflip",
         action="store_true",
         help="whether to randomly flip images horizontally",
+    )
+    parser.add_argument(
+        "--random_vflip",
+        action="store_true",
+        help="whether to randomly flip images vertically",
     )
     parser.add_argument(
         "--train_text_encoder",
@@ -434,9 +430,7 @@ def parse_args(input_args=None):
     return args
 
 
-DATASET_NAME_MAPPING = {
-    "lambdalabs/pokemon-blip-captions": ("image", "text"),
-}
+DATASET_NAME_MAPPING = {}
 
 
 def unet_attn_processors_state_dict(unet) -> Dict[str, torch.tensor]:
@@ -542,6 +536,9 @@ def main(args):
             repo_id = create_repo(
                 repo_id=args.hub_model_id or Path(args.output_dir).name, exist_ok=True, token=args.hub_token
             ).repo_id
+
+    with open(args.validation_prompt_file, "r") as f:
+        validation_prompts = [line.strip() for line in f.readlines() if len(line.strip()) > 0]
 
     # Load the tokenizers
     tokenizer_one = AutoTokenizer.from_pretrained(
@@ -833,9 +830,9 @@ def main(args):
         return tokens_one, tokens_two
 
     # Preprocessing the datasets.
-    train_resize = transforms.Resize(args.resolution, interpolation=transforms.InterpolationMode.BILINEAR)
-    train_crop = transforms.CenterCrop(args.resolution) if args.center_crop else transforms.RandomCrop(args.resolution)
-    train_flip = transforms.RandomHorizontalFlip(p=1.0)
+    train_resize = transforms.Resize([args.height, args.width], interpolation=transforms.InterpolationMode.BILINEAR)
+    train_hflip = transforms.RandomHorizontalFlip()
+    train_vflip = transforms.RandomVerticalFlip()
     train_transforms = transforms.Compose(
         [
             transforms.ToTensor(),
@@ -852,20 +849,12 @@ def main(args):
         for image in images:
             original_sizes.append((image.height, image.width))
             image = train_resize(image)
-            if args.center_crop:
-                y1 = max(0, int(round((image.height - args.resolution) / 2.0)))
-                x1 = max(0, int(round((image.width - args.resolution) / 2.0)))
-                image = train_crop(image)
-            else:
-                y1, x1, h, w = train_crop.get_params(image, (args.resolution, args.resolution))
-                image = crop(image, y1, x1, h, w)
-            if args.random_flip and random.random() < 0.5:
-                # flip
-                x1 = image.width - x1
-                image = train_flip(image)
-            crop_top_left = (y1, x1)
-            crop_top_lefts.append(crop_top_left)
+            if args.random_hflip:
+                image = train_hflip(image)
+            if args.random_vflip:
+                image = train_vflip(image)
             image = train_transforms(image)
+            crop_top_lefts.append((0, 0))
             all_images.append(image)
 
         examples["original_sizes"] = original_sizes
@@ -1028,7 +1017,7 @@ def main(args):
                 # time ids
                 def compute_time_ids(original_size, crops_coords_top_left):
                     # Adapted from pipeline.StableDiffusionXLPipeline._get_add_time_ids
-                    target_size = (args.resolution, args.resolution)
+                    target_size = (args.height, args.width)
                     add_time_ids = list(original_size + crops_coords_top_left + target_size)
                     add_time_ids = torch.tensor([add_time_ids])
                     add_time_ids = add_time_ids.to(accelerator.device, dtype=weight_dtype)
@@ -1138,11 +1127,8 @@ def main(args):
                 break
 
         if accelerator.is_main_process:
-            if args.validation_prompt is not None and epoch % args.validation_epochs == 0:
-                logger.info(
-                    f"Running validation... \n Generating {args.num_validation_images} images with prompt:"
-                    f" {args.validation_prompt}."
-                )
+            if epoch % args.validation_epochs == 0:
+                logger.info(f"Running validation... \n Generating images with prompts:" f" {validation_prompts}.")
                 # create pipeline
                 if not args.train_text_encoder:
                     text_encoder_one = text_encoder_cls_one.from_pretrained(
@@ -1166,12 +1152,11 @@ def main(args):
 
                 # run inference
                 generator = torch.Generator(device=accelerator.device).manual_seed(args.seed) if args.seed else None
-                pipeline_args = {"prompt": args.validation_prompt}
 
                 with torch.cuda.amp.autocast():
                     images = [
-                        pipeline(**pipeline_args, generator=generator).images[0]
-                        for _ in range(args.num_validation_images)
+                        pipeline(prompt=prompt, width=args.width, height=args.height, generator=generator).images[0]
+                        for prompt in validation_prompts
                     ]
 
                 for tracker in accelerator.trackers:
@@ -1182,8 +1167,8 @@ def main(args):
                         tracker.log(
                             {
                                 "validation": [
-                                    wandb.Image(image, caption=f"{i}: {args.validation_prompt}")
-                                    for i, image in enumerate(images)
+                                    wandb.Image(image, caption=f"{i}: {prompt}")
+                                    for i, (prompt, image) in enumerate(zip(validation_prompts, images))
                                 ]
                             }
                         )
@@ -1232,26 +1217,27 @@ def main(args):
 
         # run inference
         images = []
-        if args.validation_prompt and args.num_validation_images > 0:
-            generator = torch.Generator(device=accelerator.device).manual_seed(args.seed) if args.seed else None
-            images = [
-                pipeline(args.validation_prompt, num_inference_steps=25, generator=generator).images[0]
-                for _ in range(args.num_validation_images)
+        generator = torch.Generator(device=accelerator.device).manual_seed(args.seed) if args.seed else None
+        images = [
+            pipeline(prompt, width=args.width, height=args.height, num_inference_steps=25, generator=generator).images[
+                0
             ]
+            for prompt in validation_prompts
+        ]
 
-            for tracker in accelerator.trackers:
-                if tracker.name == "tensorboard":
-                    np_images = np.stack([np.asarray(img) for img in images])
-                    tracker.writer.add_images("test", np_images, epoch, dataformats="NHWC")
-                if tracker.name == "wandb":
-                    tracker.log(
-                        {
-                            "test": [
-                                wandb.Image(image, caption=f"{i}: {args.validation_prompt}")
-                                for i, image in enumerate(images)
-                            ]
-                        }
-                    )
+        for tracker in accelerator.trackers:
+            if tracker.name == "tensorboard":
+                np_images = np.stack([np.asarray(img) for img in images])
+                tracker.writer.add_images("test", np_images, epoch, dataformats="NHWC")
+            if tracker.name == "wandb":
+                tracker.log(
+                    {
+                        "test": [
+                            wandb.Image(image, caption=f"{i}: {prompt}")
+                            for i, (prompt, image) in enumerate(zip(validation_prompts, images))
+                        ]
+                    }
+                )
 
         if args.push_to_hub:
             save_model_card(
