@@ -161,4 +161,4 @@ cython_debug/
 env.bat
 textures
 *.zip
-weights/
+demo/
