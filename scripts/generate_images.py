@@ -10,7 +10,9 @@ NEGATIVE_PROMPT = "blurry, fuzzy, low resolution, cartoon, painting"
 NUM_INFERENCE_STEPS = 100
 
 
-def generate_images(captions_path, data_path, vae, model, cache_dir, lora, lora_values, gs_values, seed_values):
+def generate_images(
+    captions_path, data_path, vae, model, cache_dir, lora, lora_values, gs_values, seed_values, no_upscale
+):
     with open(captions_path, "r") as f:
         captions = [line.strip() for line in f.readlines() if len(line.strip()) > 0]
 
@@ -25,10 +27,13 @@ def generate_images(captions_path, data_path, vae, model, cache_dir, lora, lora_
     )
     pipe.to("cuda")
 
-    pipe_upscale = StableDiffusionLatentUpscalePipeline.from_pretrained(
-        "stabilityai/sd-x2-latent-upscaler", torch_dtype=torch.float16, cache_dir=cache_dir
-    )
-    pipe_upscale.to("cuda")
+    if not no_upscale:
+        pipe_upscale = StableDiffusionLatentUpscalePipeline.from_pretrained(
+            "stabilityai/sd-x2-latent-upscaler", torch_dtype=torch.float16, cache_dir=cache_dir
+        )
+        pipe_upscale.to("cuda")
+    else:
+        pipe_upscale = None
 
     for idx, caption in tqdm.tqdm(enumerate(captions), total=len(captions)):
         img_fn_prefix = os.path.join(
@@ -52,13 +57,13 @@ def generate_images(captions_path, data_path, vae, model, cache_dir, lora, lora_
                         generator=generator,
                         guidance_scale=int(gs),
                     ).images[0]
-                    image = pipe_upscale(
-                        f"a texture of {caption}, high resolution, 8 k",
-                        negative_prompt=NEGATIVE_PROMPT,
-                        image=image,
-                        num_inference_steps=10,
-                        guidance_scale=10.0,
-                    ).images[0]
+                    if pipe_upscale is not None:
+                        image = pipe_upscale(
+                            f"a texture of {caption}, high resolution",
+                            image=image,
+                            num_inference_steps=10,
+                            guidance_scale=5.0,
+                        ).images[0]
                     image.save(img_fn_prefix + f"_{lora_val}_{gs}_{seed}.png")
 
 
@@ -73,6 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("--lora_values", type=str, default="1300,1500,2000,2200")
     parser.add_argument("--gs_values", type=str, default="10,15,20")
     parser.add_argument("--seed_values", type=str, default="0,50,100")
+    parser.add_argument("--no_upscale", action="store_true")
 
     args = parser.parse_args()
 
@@ -89,4 +95,5 @@ if __name__ == "__main__":
         args.lora_values,
         args.gs_values,
         args.seed_values,
+        args.no_upscale,
     )

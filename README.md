@@ -4,19 +4,19 @@
 
 ## Using Stable Diffusion XL + LoRA [v2]
 
-### Demos (v2)
+### Demos
 
 TODO
 
-### Training (v2)
+### Training
 
 Follow the instructions on [sdxl-lora-planet-textures](https://huggingface.co/sshh12/sdxl-lora-planet-textures). You can also find several pre-trained models here.
 
-LoRA enabled training on an `NVIDIA 3090 Ti``.
+LoRA enabled training on an `NVIDIA 3090 Ti`.
 
-### Inference (v2)
+### Inference
 
-```
+```py
 import torch
 from diffusers import DiffusionPipeline, AutoencoderKL
 
@@ -36,7 +36,7 @@ See `scripts/generate_images.py` for an example of advanced usage (including usi
 
 ## Using Stable Diffusion [v1]
 
-### Demos (v1)
+### Demos
 
 Cherry-picked best-of-4. It tends to struggle with prompts involving oceans or continents as that's pretty overfit to Earth. Generally, this model is fairly overfit to existing objects in our solar system.
 
@@ -46,7 +46,7 @@ Cherry-picked best-of-4. It tends to struggle with prompts involving oceans or c
 |    a large gas giant with multi-color rainbow bands. fictitious    | ![Texture2](https://github.com/sshh12/planet-diffusion/assets/6625384/99497404-a5d4-4b43-b516-a63b67f281a2) | ![untitled](https://github.com/sshh12/planet-diffusion/assets/6625384/6800cd5d-65dc-4fc8-87b3-3ddb6d604907) |
 | a dark grey cratered planet with large white icy poles. fictitious |  ![00066](https://github.com/sshh12/planet-diffusion/assets/6625384/b4a57ebd-782e-4fef-a61e-c15a6cb78de1)   | ![untitled](https://github.com/sshh12/planet-diffusion/assets/6625384/f263a245-8c77-4e09-83de-69e6a21d2660) |
 
-### Training (v1)
+### Training
 
 1. Generate a dataset with the scripts in the repo or use [sshh12/planet-textures](https://huggingface.co/datasets/sshh12/planet-textures)
 2. Clone https://github.com/justinpinkney/stable-diffusion @ `f1293f9795fda211d7fffdb84cd308424c2a184b` and apply `v1/stable-diffusion.patch`
@@ -72,7 +72,7 @@ ckpt_path = hf_hub_download(repo_id="CompVis/stable-diffusion-v-1-4-original", f
 
 Feel free to contact me (using GitHub issues) for the original weights or you run into issues setting this up.
 
-### Inference (v1)
+### Inference
 
 ```python
 !(python scripts/txt2img.py \
