@@ -2,7 +2,39 @@
 
 > Fine-tuning stable diffusion to generate planet/moon textures.
 
-## Using Stable Diffusion v1
+## Using Stable Diffusion XL + LoRA [v2]
+
+### Demos (v2)
+
+TODO
+
+### Training (v2)
+
+Follow the instructions on [sdxl-lora-planet-textures](https://huggingface.co/sshh12/sdxl-lora-planet-textures). You can also find several pre-trained models here.
+
+LoRA enabled training on an `NVIDIA 3090 Ti``.
+
+### Inference (v2)
+
+```
+import torch
+from diffusers import DiffusionPipeline, AutoencoderKL
+
+vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)
+pipe = DiffusionPipeline.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", vae=vae, torch_dtype=torch.float16, variant="fp16", use_safetensors=True)
+pipe.load_lora_weights("sshh12/sdxl-lora-planet-textures")
+pipe.to("cuda")
+
+prompt = "A dwarf planet exhibiting a striking purple color, with a surface peppered with craters and towering ice formations"
+negative_prompt = 'blurry, fuzzy, low resolution, cartoon, painting'
+
+image = pipe(prompt=prompt, negative_prompt=negative_prompt, width=1024, height=512).images[0]
+image
+```
+
+See `scripts/generate_images.py` for an example of advanced usage (including using an upscaler).
+
+## Using Stable Diffusion [v1]
 
 ### Demos (v1)
 
